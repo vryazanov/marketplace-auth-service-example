@@ -20,7 +20,11 @@ services:
       context: .
     command: ["uv", "run", "alembic", "upgrade", "head"]
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@auth-postgres:5432/auth_db
+      POSTGRES_HOST: auth-postgres
+      POSTGRES_DATABASE_NAME: auth_db
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USERNAME: postgres
     depends_on:
       auth-postgres:
         condition: service_healthy
@@ -32,8 +36,14 @@ services:
       context: .
     command: ["uv", "run", "python", "-m", "bin.api"]
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@auth-postgres:5432/auth_db
+      POSTGRES_HOST: auth-postgres
+      POSTGRES_DATABASE_NAME: auth_db
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USERNAME: postgres
       JWT_SECRET: ${JWT_SECRET:-change-me}
+    env_file:
+      - .env.example
     depends_on:
       auth-postgres:
         condition: service_healthy

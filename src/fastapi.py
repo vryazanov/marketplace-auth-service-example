@@ -1,20 +1,22 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from fastapi import FastAPI
+
+from src.infrastructure.persistence.database import (
+    create_engine,
+    create_session_factory,
+)
+from src.presentation.api.dependencies import setup
+from src.presentation.api.routes.internal import router as internal_router
+from src.presentation.api.routes.public import router as public_router
+from src.settings import Settings
 
 
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+def create_app() -> FastAPI:
+    settings = Settings()
+    engine = create_engine(settings)
+    session_factory = create_session_factory(engine)
 
-    postgres_host: str
-    postgres_database_name: str
-    postgres_password: str
-    postgres_port: int
-    postgres_username: str
-
-    jwt_secret: str = "change-me"
-    jwt_algorithm: str = "HS256"
-    jwt_expire_hours: int = 24
-    jwt_refresh_expire_days: int = 30
-
-    @property
-    def database_url(self) -> str:
-        return f"postgresql+asyncpg://{self.postgres_username}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_database_name}"
+    app = FastAPI(title="Auth Service")
+    setup(settings, session_factory)
+    app.include_router(public_router)
+    app.include_router(internal_router)
+    return app
